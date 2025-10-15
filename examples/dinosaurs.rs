@@ -4,8 +4,9 @@ use bevy::animation::RepeatAnimation;
 use bevy::color::palettes::css::*;
 use bevy::pbr::*;
 use bevy::prelude::*;
-use bevy_tweening::lens::{TransformPositionLens, TransformRotationLens};
-use bevy_tweening::{Animator, Tracks, Tween, TweeningPlugin};
+use bevy_tweening::Lens;
+use bevy_tweening::TweenAnim;
+use bevy_tweening::{Tween, TweeningPlugin};
 use std::f32::consts::PI;
 use std::time::Duration;
 
@@ -261,6 +262,18 @@ fn move_trex(
 #[derive(Component)]
 struct Moving;
 
+struct TransformPoseLens {
+    start: (Vec3, Quat),
+    end: (Vec3, Quat),
+}
+
+impl Lens<Transform> for TransformPoseLens {
+    fn lerp(&mut self, mut target: Mut<'_, Transform>, ratio: f32) {
+        target.translation = self.start.0.lerp(self.end.0, ratio);
+        target.rotation = self.start.1.slerp(self.end.1, ratio);
+    }
+}
+
 #[allow(clippy::type_complexity)]
 fn move_camera(
     mut commands: Commands,
@@ -273,28 +286,16 @@ fn move_camera(
 
         let target = Transform::from_xyz(x + 20., y - 30., z - 50.).looking_at(Vec3::ZERO, Vec3::Y);
 
-        let translation_tween = Tween::new(
+        let pose_tween = Tween::new(
             EaseFunction::QuadraticIn,
             Duration::from_secs(5),
-            TransformPositionLens {
-                start: transform.translation,
-                end: target.translation,
+            TransformPoseLens {
+                start: (transform.translation, transform.rotation),
+                end: (target.translation, target.rotation),
             },
         );
 
-        let rotation_tween = Tween::new(
-            EaseFunction::QuadraticIn,
-            Duration::from_secs(5),
-            TransformRotationLens {
-                start: transform.rotation,
-                end: target.rotation,
-            },
-        );
-
-        commands.entity(entity).insert(Animator::new(Tracks::new([
-            translation_tween,
-            rotation_tween,
-        ])));
+        commands.entity(entity).insert(TweenAnim::new(pose_tween));
     });
 }
 

@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use bevy::asset::load_internal_asset;
-use bevy::pbr::{NotShadowCaster, NotShadowReceiver};
+use bevy::light::{NotShadowCaster, NotShadowReceiver};
 use bevy::prelude::*;
 
 use crate::configuration::{ForegroundColor, Percentage};
